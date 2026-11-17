@@ -9,33 +9,34 @@ class Ghost {
    field int x, y; // screen location of the square's top-left corner
    field int size; // length of this square, in pixels
    field int memAddress;
-
+   field int direction; // direção de movimentação do ghost, 0 = parado, 1 = cima, 2 = baixo, 3 = esquerda, 4 = direita
    /** Constructs a new square with a given location and size. */
    constructor Ghost new(int Ax, int Ay) {
       let x = Ax;
       let y = Ay;
       let size = 16;
       let memAddress = 0;
+      let direction = 0;
       do draw();
       return this;
    }
 
-   /** Disposes this square. */
+   /** Dispose, tira da memória */
    method void dispose() {
       do Memory.deAlloc(this);
       return;
    }
 
-   /** Draws the square on the screen. */
+   /** Desenha o ghost na tela */
    method void draw() {
       do drawHappyGhost(y*32+(x/size));
       return;
    }
 
-   /** Erases the square from the screen. */
+   /** Apaga o ghost da tela */
    method void erase() {
       do Screen.setColor(false);
-      do Screen.drawRectangle(x, y, x + size, y + size);
+      do Screen.drawRectangle(x, y, x + size - 1, y + size - 1);
       return;
    }
 
@@ -60,31 +61,50 @@ class Ghost {
       return;
    }
 
+   //** Getters de posição e tamanho do ghost */
+   method int getX() {
+      return x;
+   }
 
+   method int getY() {
+      return y;
+   }
+   
+   method int getSize() {
+      return size;
+   }
 
-    /** Increments the square size by 2 pixels. */
-   method void incSize() {
-      if (((y + size) < 254) & ((x + size) < 510)) {
-         do erase();
-         let size = size + 2;
-         do draw();
-      }
+   //** Getter e setter de direção do ghost */
+   method void setDirection(int dir) {
+      let direction = dir;
       return;
    }
 
-   /** Decrements the square size by 2 pixels. */
-   method void decSize() {
-      if (size > 2) {
-         do erase();
-         let size = size - 2;
-         do draw();
+   method int getDirection() {
+      return direction;
+   }
+
+
+   //** Move o ghost de acordo com a direção */
+   method void move() {
+      if (direction = 1) {
+         do moveUp();
+      }
+      if (direction = 2) {
+         do moveDown();
+      }
+      if (direction = 3) {
+         do moveLeft();
+      }
+      if (direction = 4) {
+         do moveRight();
       }
       return;
    }
 
    /** Moves the ghost up by 16 pixels. */
    method void moveUp() {
-      if (y > 15) {
+      if (y > 31) {
          do erase();
          let y = y - 16;
          do draw();
