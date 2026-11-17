@@ -61,7 +61,7 @@ class Ghost {
       return;
    }
 
-   //** Getters de posição e tamanho do ghost */
+   //** Getters de posição e tamanho do player */
    method int getX() {
       return x;
    }
@@ -102,7 +102,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the ghost up by 16 pixels. */
+   /** Move o ghost para cima em 16 pixels. */
    method void moveUp() {
       if (y > 31) {
          do erase();
@@ -112,7 +112,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the square down by 16 pixels. */
+   /** Move o ghost para baixo em 16 pixels. */
    method void moveDown() {
       if ((y + size) < 239) {
          do erase();
@@ -122,7 +122,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the ghost left by 16 pixels. */
+   /** Move o ghost para a esquerda em 16 pixels. */
    method void moveLeft() {
       if (x > 15) {
          do erase();
@@ -132,7 +132,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the square right by 16 pixels. */
+   /** Move o ghost para a direita em 16 pixels. */
    method void moveRight() {
       if ((x + size) < 495) {
          do erase();
