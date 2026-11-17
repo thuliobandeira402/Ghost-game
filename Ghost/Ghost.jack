@@ -1,16 +1,13 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-// File name: projects/09/Square/Square.jack
 
-/** Implements a graphical square. */
+/** Implementa o sprite do ghost e suas funcionalidades */
 class Ghost {
 
-   field int x, y; // screen location of the square's top-left corner
-   field int size; // length of this square, in pixels
+   field int x, y; //* localização do ghost na tela */
+   field int size; //* comprimento do ghost em pixels */
    field int memAddress;
-   field int direction; // direção de movimentação do ghost, 0 = parado, 1 = cima, 2 = baixo, 3 = esquerda, 4 = direita
-   /** Constructs a new square with a given location and size. */
+   field int direction; //* direção de movimentação do ghost, 0 = parado, 1 = cima, 2 = baixo, 3 = esquerda, 4 = direita */
+
+   //** Construtor do ghost */
    constructor Ghost new(int Ax, int Ay) {
       let x = Ax;
       let y = Ay;
@@ -61,7 +58,7 @@ class Ghost {
       return;
    }
 
-   //** Getters de posição e tamanho do player */
+   //** Getters de posição e tamanho do ghost */
    method int getX() {
       return x;
    }

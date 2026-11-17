@@ -1,0 +1,47 @@
+
+
+class Obstacle {
+    field int x, y; //* localização do canto superior esquerdo do obstáculo na tela */
+    field int width, height; //* largura e altura do obstáculo em pixels */
+
+    //* construtor do obstáculo */
+    constructor Obstacle new(int Ax, int Ay, int Awidth, int Aheight) {
+        let x = Ax;
+        let y = Ay;
+        let width = Awidth;
+        let height = Aheight;
+        do draw();
+        return this;
+    }
+
+    //* dispose padrão, tira da memória */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+    
+    //* desenha o obstáculo na tela */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x, y, x + width - 1, y + height - 1);
+        return;
+    }
+
+    //* getters para a lógica de colisão */
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+
+    method int getWidth() {
+        return width;
+    }
+
+    method int getHeight() {
+        return height;
+    }
+
+}

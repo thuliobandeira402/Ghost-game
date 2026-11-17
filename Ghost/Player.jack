@@ -1,90 +1,108 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-// File name: projects/09/Square/Square.jack
 
-/** Implements a graphical square. */
-class Ghost {
+/** Implementa o sprite do player e suas funcionalidades */
+class Player {
 
-   field int x, y; // screen location of the square's top-left corner
-   field int size; // length of this square, in pixels
+   field int x, y; //* localização do player na tela */
+   field int size; //* comprimento do player em pixels */
    field int memAddress;
-
-   /** Constructs a new square with a given location and size. */
-   constructor Ghost new(int Ax, int Ay) {
+   field int direction; //* direção de movimentação do player, 0 = parado, 1 = cima, 2 = baixo, 3 = esquerda, 4 = direita */
+   
+   //** Construtor do player */
+   constructor Player new(int Ax, int Ay) {
       let x = Ax;
       let y = Ay;
       let size = 16;
       let memAddress = 0;
+      let direction = 0;
       do draw();
       return this;
    }
 
-   /** Disposes this square. */
+   /** Dispose, tira da memória */
    method void dispose() {
       do Memory.deAlloc(this);
       return;
    }
 
-   /** Draws the square on the screen. */
+   /** Desenha o player na tela */
    method void draw() {
-      do drawHappyGhost(y*32+(x/size));
+      do drawPerson(y * 32 + (x / size));
       return;
    }
 
-   /** Erases the square from the screen. */
+   /** Apaga o player da tela */
    method void erase() {
       do Screen.setColor(false);
-      do Screen.drawRectangle(x, y, x + size, y + size);
+      do Screen.drawRectangle(x, y, x + size - 1, y + size - 1);
       return;
    }
 
-   method void drawHappyGhost(int location) {
-      let memAddress = 16384+location;
-      do Memory.poke(memAddress+0, 8184);
-      do Memory.poke(memAddress+32, 16380);
-      do Memory.poke(memAddress+64, 25542);
-      do Memory.poke(memAddress+96, -1);
-      do Memory.poke(memAddress+128, -2065);
-      do Memory.poke(memAddress+160, -7225);
-      do Memory.poke(memAddress+192, -7225);
-      do Memory.poke(memAddress+224, -2065);
-      do Memory.poke(memAddress+256, -1);
-      do Memory.poke(memAddress+288, -1);
-      do Memory.poke(memAddress+320, -1);
-      do Memory.poke(memAddress+352, -4081);
-      do Memory.poke(memAddress+384, -2017);
-      do Memory.poke(memAddress+416, -961);
-      do Memory.poke(memAddress+448, -1);
-      do Memory.poke(memAddress+480, -1);
+   /** Desenha o sprite da pessoa na memória */
+   method void drawPerson(int location) {
+      let memAddress = 16384 + location;
+      do Memory.poke(memAddress + 0, 960);
+      do Memory.poke(memAddress + 32, 2016);
+      do Memory.poke(memAddress + 64, 2016);
+      do Memory.poke(memAddress + 96, 960);
+      do Memory.poke(memAddress + 128, 384);
+      do Memory.poke(memAddress + 160, 4080);
+      do Memory.poke(memAddress + 192, 8184);
+      do Memory.poke(memAddress + 224, 6528);
+      do Memory.poke(memAddress + 256, 384);
+      do Memory.poke(memAddress + 288, 384);
+      do Memory.poke(memAddress + 320, 960);
+      do Memory.poke(memAddress + 352, 1632);
+      do Memory.poke(memAddress + 384, 3120);
+      do Memory.poke(memAddress + 416, 6168);
+      do Memory.poke(memAddress + 448, 6168);
+      do Memory.poke(memAddress + 480, 14364);
       return;
    }
 
+   //** Getters de posição e tamanho do player */
+   method int getX() {
+      return x;
+   }
+
+   method int getY() {
+      return y;
+   }
+   
+   method int getSize() {
+      return size;
+   }
+
+   //** Getter e setter de direção do player */
+   method void setDirection(int dir) {
+      let direction = dir;
+      return;
+   }
+
+   method int getDirection() {
+      return direction;
+   }
 
 
-    /** Increments the square size by 2 pixels. */
-   method void incSize() {
-      if (((y + size) < 254) & ((x + size) < 510)) {
-         do erase();
-         let size = size + 2;
-         do draw();
+   //** Move o player de acordo com a direção */
+   method void move() {
+      if (direction = 1) {
+         do moveUp();
+      }
+      if (direction = 2) {
+         do moveDown();
+      }
+      if (direction = 3) {
+         do moveLeft();
+      }
+      if (direction = 4) {
+         do moveRight();
       }
       return;
    }
 
-   /** Decrements the square size by 2 pixels. */
-   method void decSize() {
-      if (size > 2) {
-         do erase();
-         let size = size - 2;
-         do draw();
-      }
-      return;
-   }
-
-   /** Moves the ghost up by 16 pixels. */
+   /** Move o player para cima em 16 pixels. */
    method void moveUp() {
-      if (y > 15) {
+      if (y > 31) {
          do erase();
          let y = y - 16;
          do draw();
@@ -92,7 +110,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the square down by 16 pixels. */
+   /** Move o player para baixo em 16 pixels. */
    method void moveDown() {
       if ((y + size) < 239) {
          do erase();
@@ -102,7 +120,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the ghost left by 16 pixels. */
+   /** Move o player para a esquerda em 16 pixels. */
    method void moveLeft() {
       if (x > 15) {
          do erase();
@@ -112,7 +130,7 @@ class Ghost {
       return;
    }
 
-   /** Moves the square right by 16 pixels. */
+   /** Move o player para a direita em 16 pixels. */
    method void moveRight() {
       if ((x + size) < 495) {
          do erase();
