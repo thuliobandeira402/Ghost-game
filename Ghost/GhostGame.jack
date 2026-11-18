@@ -1,85 +1,181 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-// File name: projects/09/Square/SquareGame.jack
-
-/**
- * Implements the Square Dance game.
- * This simple game allows the user to move a black square around
- * the screen, and change the square's size during the movement.
- * When the game starts, a square of 30 by 30 pixels is shown at the
- * top-left corner of the screen. The user controls the square as follows.
- * The 4 arrow keys are used to move the square up, down, left, and right.
- * The 'z' and 'x' keys are used, respectively, to decrement and increment
- * the square's size. The 'q' key is used to quit the game.
- */
-
+/** Controla o fluxo principal, entradas, colisões e relógios do jogo */
 class GhostGame {
-   field int direction; // the square's current direction: 
-                        // 0=none, 1=up, 2=down, 3=left, 4=right
-   field Random random;
-   field Ghost ghost;
+   field Player player;      // personagem controlado pelo Jogador 2 (pessoa)
+   field Ghost ghost;        // personagem controlado pelo Jogador 1 (fantasma)
+   field Timer timerprep;    // relógio regressivo da fase de preparação (fuga)
+   field Timer timergame;    // relógio regressivo da partida principal
+   field Array obstacles;    // vetor com os obstáculos do mapa
+   field int numObstacles;   // quantidade total de obstáculos no vetor
+   field Random random;      // gerador de números pseudoaleatórios
 
-   /** Constructs a new Square Game. */
+   /** Construtor do jogo: instancia personagens, relógios e obstáculos */
    constructor GhostGame new() {
-      // Creates a 30 by 30 pixels square and positions it at the top-left
-      // of the screen.
-      let ghost = Ghost.new(0, 0);
+      let ghost = Ghost.new(32, 48);
+      let player = Player.new(320, 160);
+      let timerprep = Timer.new(3, 50, 0, 2);  // 3 segundos de preparação, atualiza a cada 50ms, linha 0, coluna 2
+      let timergame = Timer.new(7, 50, 0, 25); // 7 segundos de partida, atualiza a cada 50ms, linha 0, coluna 25
+      let numObstacles = 2;
+      let obstacles = Array.new(numObstacles);
+      let obstacles[0] = Obstacle.new(64, 48, 16, 16);
+      let obstacles[1] = Obstacle.new(160, 160, 32, 32);
       let random = Random.new(19);
-      let direction = 0;  // initial state is no movement
       return this;
    }
 
-   /** Disposes this game. */
+   /** Libera toda a memória alocada pelos objetos do jogo */
    method void dispose() {
       do ghost.dispose();
+      do player.dispose();
+      do timerprep.dispose();
+      do timergame.dispose();
+      do obstacledispose();
+      do obstacles.dispose();
+      do random.dispose();
       do Memory.deAlloc(this);
       return;
    }
 
-   /** Moves the square in the current direction. */
-   method void moveGhost() {
-      if (direction = 1) { do ghost.moveUp(); }
-      if (direction = 2) { do ghost.moveDown(); }
-      if (direction = 3) { do ghost.moveLeft(); }
-      if (direction = 4) { do ghost.moveRight(); }
-      do Sys.wait(5);  // delays the next movement
+   /** Percorre o vetor de obstáculos e libera cada instância da memória */
+   method void obstacledispose() {
+      var int i;
+      var Obstacle obs;
+
+      let i = 0;
+      while (i < numObstacles) {
+         let obs = obstacles[i];
+         do obs.dispose();
+         let i = i + 1;
+      }
       return;
    }
 
-   /** Runs the game: handles the user's inputs and moves the square accordingly */
-   method void run() {
-      var char key;  // the key currently pressed by the user
-      var boolean exit;
-      let exit = false;
-      
-      while (~exit) {
-         // waits for a key to be pressed
-         while (key = 0) {
-            let key = Keyboard.keyPressed();
-            do moveGhost();
-            do Sys.wait(50);
-            // let direction = random.randRange(4);
-         }
-         if (key = 81)  { let exit = true; }     // q key
-         // if (key = 90)  { do ghost.decSize(); } // z key
-         // if (key = 88)  { do ghost.incSize(); } // x key
-         if (key = 131) { let direction = 1; }   // up arrow
-         if (key = 133) { let direction = 2; }   // down arrow
-         if (key = 130) { let direction = 3; }   // left arrow
-         if (key = 132) { let direction = 4; }   // right arrow
+   /** Lê a tecla pressionada e atualiza a direção independente de cada jogador */
+   method void inputkey(char key) {
+      if (key = 59)  { do ghost.setDirection(0); }   // tecla ';' (parar fantasma)
+      if (key = 131) { do ghost.setDirection(1); }   // seta para cima
+      if (key = 133) { do ghost.setDirection(2); }   // seta para baixo
+      if (key = 130) { do ghost.setDirection(3); }   // seta para esquerda
+      if (key = 132) { do ghost.setDirection(4); }   // seta para direita
+      if (key = 87)  { do player.setDirection(1); }  // tecla 'W' (cima)
+      if (key = 83)  { do player.setDirection(2); }  // tecla 'S' (baixo)
+      if (key = 65)  { do player.setDirection(3); }  // tecla 'A' (esquerda)
+      if (key = 68)  { do player.setDirection(4); }  // tecla 'D' (direita)
+      if (key = 69)  { do player.setDirection(0); }  // tecla 'E' (parar pessoa)
+      return;
+   }
+   
+   /** Verifica colisão retangular (AABB) entre o player e o ghost */
+   method boolean checkCollision() {
+      var int playerX, playerY, playerSize;
+      var int ghostX, ghostY, ghostSize;
 
-         // waits for the key to be released
-         while (~(key = 0)) {
-            let key = Keyboard.keyPressed();
-            do moveGhost();
-            do Sys.wait(50);
+      let playerX = player.getX();
+      let playerY = player.getY();
+      let playerSize = player.getSize();
+
+      let ghostX = ghost.getX();
+      let ghostY = ghost.getY();
+      let ghostSize = ghost.getSize();
+
+      // Testa sobreposição nos eixos X e Y
+      if ((playerX < (ghostX + ghostSize)) &
+          ((playerX + playerSize) > ghostX) &
+          (playerY < (ghostY + ghostSize)) &
+          ((playerY + playerSize) > ghostY)) {
+          return true; // colisão detectada
+      }
+      return false; // sem colisão
+   }
+
+   /** Valida se o próximo passo na direção informada está livre de obstáculos */
+   method boolean canMove(int curX, int curY, int size, int dir) {
+      var Obstacle obs;
+      var int i;
+
+      if (dir = 0) { // sem movimento
+         return false;
+      }
+      if (dir = 1) { // cima
+         let curY = curY - 16;
+      }
+      if (dir = 2) { // baixo
+         let curY = curY + 16;
+      }
+      if (dir = 3) { // esquerda
+         let curX = curX - 16;
+      }
+      if (dir = 4) { // direita
+         let curX = curX + 16;
+      }
+      let i = 0;
+      while (i < numObstacles) {
+         let obs = obstacles[i];
+         if ((curX < (obs.getX() + obs.getWidth())) &
+             ((curX + size) > obs.getX()) &
+             (curY < (obs.getY() + obs.getHeight())) &
+             ((curY + size) > obs.getY())) {
+             return false; // obstáculo no caminho
          }
-         let direction = 0; 
-     } // while
-     return;
+         let i = i + 1;
+      }
+      return true; // nenhum obstáculo no caminho
+   }
+
+   /** Executa o loop principal: captura teclas, atualiza relógios e movimenta personagens */
+   method void run() {
+      var char key;     // tecla pressionada no ciclo atual
+      var boolean exit; // bandeira de encerramento do loop
+      let exit = false;
+      let key = Keyboard.keyPressed(); 
+      if(key = 140) { // ESC, sair
+         let exit = true;
+      }
+
+      while (~exit) {
+         // Encerra se o fantasma encostar na pessoa
+         if (checkCollision()) {
+            let exit = true;
+         }
+
+         // Encerra se a tecla ESC (código 140) for pressionada
+         if (Keyboard.keyPressed() = 140) {
+            let exit = true;
+         }
+
+         // Lê o teclado e atualiza a direção dos jogadores
+         let key = Keyboard.keyPressed();
+         do inputkey(key);
+
+         if (~(timerprep.isFinished())) {
+            // Fase 1: apenas o player se move durante o tempo de fuga
+            do timerprep.tick();
+            if (canMove(player.getX(), player.getY(), player.getSize(), player.getDirection())) {
+               do player.move();
+            }
+            else {
+               do player.setDirection(0); // impede movimento ao bater no obstáculo
+            }
+         } else {
+            // Fase 2: ambos se movem durante o tempo principal da caçada
+            do timergame.tick();
+            if (canMove(ghost.getX(), ghost.getY(), ghost.getSize(), ghost.getDirection())) {
+               do ghost.move();
+            }
+            else {
+               do ghost.setDirection(0); // impede movimento ao bater no obstáculo
+            }
+            if (canMove(player.getX(), player.getY(), player.getSize(), player.getDirection())) {
+               do player.move();
+            }
+            else {
+               do player.setDirection(0); // impede movimento ao bater no obstáculo
+            }
+         }
+         do Sys.wait(50); // aguarda 50ms por ciclo (20 ciclos = 1 segundo)
+         if (timergame.isFinished()) {
+            let exit = true; // encerra o loop se o tempo da partida acabar
+         }
+      }
+      return;
    }
 }
-
-
-

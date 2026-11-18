@@ -1,4 +1,4 @@
-
+//* Implementa o sprite do obstáculo e suas funcionalidades */
 
 class Obstacle {
     field int x, y; //* localização do canto superior esquerdo do obstáculo na tela */

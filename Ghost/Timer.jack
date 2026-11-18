@@ -1,0 +1,58 @@
+/** Implementa os relógios regressivos do jogo */
+class Timer {
+    field int seconds;        // segundos restantes na contagem
+    field int ticks;          // contador de ciclos do loop principal
+    field int ticksPerSecond; // quantidade de ciclos equivalente a 1 segundo real
+    field int row, col;       // linha (0..22) e coluna (0..63) do cursor na tela
+
+    /** construtor do relógio: define tempo inicial, taxa de atualização e posição */
+    constructor Timer new(int startSeconds, int waitMs, int displayRow, int displayCol) {
+        let seconds = startSeconds;
+        let ticks = 0;
+        let row = displayRow;
+        let col = displayCol;
+        // converte o tempo de espera do loop para ticks por segundo
+        let ticksPerSecond = 1000 / waitMs;
+        do draw();
+        return this;
+    }
+
+    /** atualiza a contagem a cada ciclo do loop e decrementa 1s ao atingir ticksPerSecond */
+    method void tick() {
+        if (seconds > 0) {
+            let ticks = ticks + 1;
+            // Quando a variável acumula ciclos suficientes para 1 segundo, atualiza o timer
+            if (~(ticks < ticksPerSecond)) {
+                let seconds = seconds - 1;
+                let ticks = 0;
+                do draw();
+            }
+        }
+        return;
+    }
+
+    /** exibe o tempo restante na grade de texto do topo da tela */
+    method void draw() {
+        do Output.moveCursor(row, col);
+        do Output.printString("Tempo: ");
+        do Output.printInt(seconds);
+        // Imprime um espaço extra para limpar o dígito extra ao cair de 10 para 9
+        do Output.printString(" ");
+        return;
+    }
+
+    /** getters para lógica do jogo, como verificar se o tempo acabou, etc */
+
+    method int getSeconds() {
+        return seconds;
+    }
+
+    method boolean isFinished() {
+        return ~(seconds > 0);
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}
